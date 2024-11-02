@@ -1,0 +1,3 @@
+([('MyrientDownloader',
+   '/Users/bswartz/PycharmProjects/myrient-downloader/dist/MyrientDownloader',
+   'EXECUTABLE')],)

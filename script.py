@@ -22,7 +22,7 @@ cancel_download = False
 # Create the main GUI root
 root = ctk.CTk()
 root.title("Myrient Downloader")
-root.geometry("800x230")
+root.geometry("800x250")
 
 # Variable to control "Only USA" filter
 only_usa_var = IntVar(root, value=0)  # 0 = unchecked, 1 = checked
@@ -111,8 +111,9 @@ def crawl_page(page_url):
 
 
 def sanitize_filename(filename):
-    # Replace invalid characters with underscores
-    return re.sub(r'[<>:"/\\|?*]', '_', filename)
+    # Replace invalid characters with underscores and ensure there are no trailing periods
+    sanitized = re.sub(r'[<>:"/\\|?*]', '_', filename).rstrip(". ")
+    return sanitized
 
 
 def download_file(file_url, download_dir, filename):
@@ -135,7 +136,15 @@ def download_files(file_data, download_dir, progress_label):
     global cancel_download
     total_files = len(file_data)
 
-    for index, (filename, file_url, file_size) in enumerate(file_data, 1):
+    # Get the starting file index from the input (convert to zero-based index)
+    try:
+        start_index = int(start_entry.get()) - 1
+        if start_index < 0 or start_index >= total_files:
+            start_index = 0  # Reset if out of bounds
+    except ValueError:
+        start_index = 0  # Default to start from the beginning if input is invalid
+
+    for index, (filename, file_url, file_size) in enumerate(file_data[start_index:], start=start_index + 1):
         if cancel_download:
             progress_label.configure(text="Download canceled")
             break
@@ -256,6 +265,14 @@ progress_label.pack(pady=5)
 # Scan Page / Cancel button
 scan_button = ctk.CTkButton(root, text="Scan Page", command=confirm_and_download, width=300)
 scan_button.pack(pady=10)
+
+# Starting file number entry
+start_label = ctk.CTkLabel(frame, text="Start from file number:")
+start_label.grid(row=2, column=0, sticky="e", padx=(10, 5), pady=(0, 5))
+start_entry = ctk.CTkEntry(frame, width=100)
+start_entry.grid(row=2, column=1, padx=(0, 10), pady=(0, 5), sticky="w")
+start_entry.insert(0, "1")  # Default to 1
+
 
 # Start the GUI loop
 root.mainloop()
