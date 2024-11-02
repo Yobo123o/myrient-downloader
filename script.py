@@ -240,3 +240,4 @@ scan_button = ctk.CTkButton(root, text="Scan Page", command=confirm_and_download
 scan_button.pack(pady=10)
 
 root.mainloop()
+
