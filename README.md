@@ -1,6 +1,5 @@
 # Myrient Downloader
 
-
 **Myrient Downloader** is a Python-based application that allows users to effortlessly download ROM files from [Myrient](https://myrient.erista.me/). Built with a sleek, modern GUI using CustomTkinter, this program supports various file types and filters to enhance your downloading experience, providing granular control over which files to download.
 
 ---

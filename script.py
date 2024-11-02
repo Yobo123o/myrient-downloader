@@ -77,38 +77,56 @@ def crawl_page(page_url):
     total_size = 0
     for row in soup.find_all("tr"):
         link = row.find("a", href=True)
-        if link:
-            filename = link.text.strip()
 
-            # Skip files marked as BIOS or Beta
-            if "BETA" in filename.upper() or "BIOS" in filename.upper():
-                logging.info(f"Skipping file marked as 'BIOS' or 'Beta': {filename}")
-                continue
+        # Skip rows without a valid link or with non-file text in the link
+        if not link or "parent directory" in link.text.lower() or "file name" in link.text.lower():
+            logging.info(f"Skipping non-file entry: {link.text if link else 'No link'}")
+            continue
 
-            # Apply the USA filter if the checkbox is checked
-            if only_usa_var.get() == 1 and not re.search(r"\b(USA|US)\b", filename, re.IGNORECASE):
-                logging.info(f"Skipping non-USA file: {filename}")
-                continue
+        filename = link.text.strip()
 
-            file_url = urljoin(page_url, link['href'])
-            size_td = link.find_next("td")
-            if size_td:
-                size_text = size_td.text.strip()
-                size_in_bytes = parse_file_size(size_text)
-                total_size += size_in_bytes
-                file_data.append((filename, file_url, size_in_bytes))
-                logging.info(f"Found file: {filename} - Size: {format_size(size_in_bytes)}")
-            else:
-                logging.warning(f"Could not find size for {filename}")
+        # Skip files marked as BIOS, Beta, or Demo
+        if "BETA" in filename.upper() or "BIOS" in filename.upper() or "DEMO" in filename.upper():
+            logging.info(f"Skipping unwanted file: {filename}")
+            continue
+
+        # Apply the USA filter if the checkbox is checked
+        if only_usa_var.get() == 1 and not re.search(r"\b(USA|US)\b", filename, re.IGNORECASE):
+            logging.info(f"Skipping non-USA file: {filename}")
+            continue
+
+        file_url = urljoin(page_url, link['href'])
+        size_td = link.find_next("td")
+        if size_td:
+            size_text = size_td.text.strip()
+            size_in_bytes = parse_file_size(size_text)
+            total_size += size_in_bytes
+            file_data.append((filename, file_url, size_in_bytes))
+            logging.info(f"Found file: {filename} - Size: {format_size(size_in_bytes)}")
+        else:
+            logging.warning(f"Could not find size for {filename}")
 
     logging.info(f"Total files found: {len(file_data)}")
     return file_data, total_size
 
 
+def sanitize_filename(filename):
+    # Replace invalid characters with underscores
+    return re.sub(r'[<>:"/\\|?*]', '_', filename)
+
+
 def download_file(file_url, download_dir, filename):
     if cancel_download:
         return 0, 0  # Return if download was canceled
-    local_filename = os.path.join(download_dir, filename)
+
+    # Sanitize the filename to prevent issues with invalid characters
+    safe_filename = sanitize_filename(filename)
+    local_filename = os.path.join(download_dir, safe_filename)
+
+    # Ensure the download directory exists
+    os.makedirs(download_dir, exist_ok=True)
+
+    # Download the file
     urllib.request.urlretrieve(file_url, local_filename)
     return os.path.getsize(local_filename), 0
 
@@ -239,5 +257,5 @@ progress_label.pack(pady=5)
 scan_button = ctk.CTkButton(root, text="Scan Page", command=confirm_and_download, width=300)
 scan_button.pack(pady=10)
 
+# Start the GUI loop
 root.mainloop()
-
